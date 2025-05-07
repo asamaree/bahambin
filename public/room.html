@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room {{roomId}}</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="notifications-bar">
+        <div id="roomTitle">Room: {{roomId}}</div>
+        <div id="notifications">event & notifications</div>
+        <div>
+            <span id="roleDisplay">Determining role...</span> | 
+            <span id="userList">Users in room: </span>
+        </div>
+        <div id="joinButtonArea"></div>
+    </div>
+
+    <div class="room-container">
+        <div class="video-section">
+            <video id="player" controls style="width: 100%; height: 100%; background-color: black; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                <source src="{{video}}">
+                <track label="English" kind="subtitles" srclang="en" src="{{subtitle}}" default>
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div class="chat-section">
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-box">
+                <input type="text" id="chatInput" placeholder="Type a message...">
+                <button onclick="sendChat()" title="Send">📨</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const room = "{{roomId}}";
+        let username = "{{username}}";
+
+        if (!username || username === "Guest") {
+            username = prompt("Please enter your name:", "Guest");
+            if (!username) username = "Guest";
+        }
+
+        const socket = io();
+        socket.emit('join', { room, username });
+
+        const playerElement = document.getElementById('player');
+
+        const roleDisplay = document.getElementById("roleDisplay");
+        const userListDiv = document.getElementById("userList");
+        const notificationsDiv = document.getElementById("notifications");
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+
+        let isSyncing = false;
+        let isHost = false;
+
+        socket.on('role', (data) => {
+            isHost = data.isHost;
+            if (isHost) {
+                roleDisplay.innerText = 'You are the Host.';
+            } else {
+                roleDisplay.innerText = 'You are a Guest.';
+            }
+        });
+
+        socket.on('userList', (data) => {
+            userListDiv.innerText = "Users in room: " + data.users.join(", ");
+        });
+
+        socket.on('notification', (message) => {
+            notificationsDiv.innerText = message;
+            setTimeout(() => {
+                notificationsDiv.innerText = "";
+            }, 3000);
+        });
+
+        function sendChat() {
+            const message = chatInput.value.trim();
+            if (message) {
+                socket.emit('chatMessage', { room, username, message });
+                chatInput.value = '';
+            }
+        }
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendChat();
+            }
+        });
+
+        socket.on('chatMessage', (data) => {
+            const msg = document.createElement('div');
+            msg.innerText = data.username + ": " + data.message;
+            chatMessages.appendChild(msg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        function sendState() {
+            if (!isHost) return;
+            socket.emit("stateUpdate", {
+                room: room,
+                state: {
+                    playing: !playerElement.paused,
+                    time: playerElement.currentTime
+                }
+            });
+        }
+
+        playerElement.addEventListener("play", () => { if (!isSyncing) sendState(); });
+        playerElement.addEventListener("pause", () => { if (!isSyncing) sendState(); });
+        playerElement.addEventListener("seeked", () => { if (!isSyncing) sendState(); });
+
+        socket.on("stateUpdate", (data) => {
+            if (!data || !data.state) return;
+            isSyncing = true;
+            const desiredTime = data.state.time;
+            if (Math.abs(playerElement.currentTime - desiredTime) > 0.5) {
+                playerElement.currentTime = desiredTime;
+            }
+            if (data.state.playing && playerElement.paused) {
+                setTimeout(() => { tryPlay(desiredTime); }, 20);
+            } else if (!data.state.playing && !playerElement.paused) {
+                playerElement.pause();
+            }
+            isSyncing = false;
+        });
+
+        function tryPlay(targetTime) {
+            if (typeof targetTime === 'number') playerElement.currentTime = targetTime;
+            playerElement.play().catch(() => {
+                if (!document.getElementById('joinBtn')) {
+                    const notice = document.createElement("div");
+                    notice.innerHTML = "<button id='joinBtn'>Join Playback</button>";
+                    const joinArea = document.getElementById('joinButtonArea');
+                    if (joinArea) {
+                        joinArea.appendChild(notice);
+                    } else {
+                        document.body.appendChild(notice);
+                    }
+                    document.getElementById('joinBtn').onclick = () => {
+                        playerElement.currentTime = targetTime || 0;
+                        playerElement.play().then(() => { notice.remove(); })
+                            .catch(() => {
+                                notice.innerHTML = "<p>Unable to start playback. Please check your browser's autoplay settings.</p>";
+                            });
+                    };
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
