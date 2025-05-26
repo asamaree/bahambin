@@ -49,10 +49,10 @@ fi
 echo "🚀 Starting the server with pm2 on port $CUSTOM_PORT..."
 
 # Start the server using pm2, passing the custom port as an environment variable
-# We use --env to pass the environment variable to the PM2 process
-pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name video-sync-app --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch
-pm2 set env PORT $CUSTOM_PORT video-sync-app # Set the PORT environment variable for the specific app
+# Corrected app name to "bahambin" to match ecosystem.config.js
+pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name bahambin --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch
+pm2 set env PORT $CUSTOM_PORT bahambin # Set the PORT environment variable for the specific app
 pm2 save
 
-echo "✅ All done! The Video Sync server is running on port $CUSTOM_PORT."
+echo "✅ All done! The BahamBin server is running on port $CUSTOM_PORT."
 echo "🌐 Open your browser and go to http://YOUR_SERVER_IP:$CUSTOM_PORT"
