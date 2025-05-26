@@ -10,15 +10,6 @@
 </head>
 <body>
 
-    <div class="notifications-bar">
-        <div id="roomTitle">Room: {{roomId}}</div>
-        <div>
-            <span id="roleDisplay">Determining role...</span> | 
-            <span id="userListToggle" class="user-list-toggle">Users in room: <span id="userCount">0</span></span>
-        </div>
-        <div id="joinButtonArea"></div>
-    </div>
-
     <div class="room-container">
         <div class="video-section">
             <video id="player" controls>
@@ -30,7 +21,7 @@
 
         <div class="right-column-wrapper">
             <div id="userListPanel" class="user-list-panel">
-                <h4>Connected Users</h4>
+                <h4 id="userListPanelTitle">Room: {{roomId}}</h4> 
                 <ul id="activeUserListPanel" class="active-user-list-panel">
                     </ul>
             </div>
@@ -68,9 +59,10 @@
 
         const playerElement = document.getElementById('player');
 
-        const roleDisplay = document.getElementById("roleDisplay");
-        const userCountSpan = document.getElementById("userCount");
-        const userListToggle = document.getElementById("userListToggle");
+        // Removed roleDisplay and userListToggle as notifications-bar is removed
+        // const roleDisplay = document.getElementById("roleDisplay");
+        // const userListToggle = document.getElementById("userListToggle");
+        const userCountSpan = document.getElementById("userCount"); // This span is now unused, but kept for minimal changes
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const replyPreviewArea = document.getElementById('replyPreviewArea');
@@ -117,11 +109,7 @@
 
         socket.on('role', (data) => {
             isHost = data.isHost;
-            if (isHost) {
-                roleDisplay.innerText = 'You are the Host.';
-            } else {
-                roleDisplay.innerText = 'You are a Guest.';
-            }
+            // roleDisplay.innerText = isHost ? 'You are the Host.' : 'You are a Guest.'; // Removed as notifications-bar is gone
             updateUserListDisplay(currentUsersInRoom); 
         });
 
@@ -129,7 +117,7 @@
             console.log('Received userList:', data.users, 'Host ID:', data.currentHostId);
             currentUsersInRoom = data.users;
             currentRoomHostId = data.currentHostId;
-            userCountSpan.innerText = data.users.length;
+            // userCountSpan.innerText = data.users.length; // Removed as notifications-bar is gone
             updateUserListDisplay(data.users);
         });
 
@@ -196,9 +184,27 @@
         }
 
         function transferHost(newHostId) {
-            if (confirm('Are you sure you want to transfer host to this user?')) {
+            // Replaced alert/confirm with a custom modal for better UX and compliance
+            const modal = document.createElement('div');
+            modal.classList.add('custom-modal');
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <p>Are you sure you want to transfer host to this user?</p>
+                    <div class="modal-buttons">
+                        <button id="confirmTransferBtn" class="modal-button confirm">Yes</button>
+                        <button id="cancelTransferBtn" class="modal-button cancel">No</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('confirmTransferBtn').onclick = () => {
                 socket.emit('transferHost', { room, newHostId: newHostId });
-            }
+                modal.remove();
+            };
+            document.getElementById('cancelTransferBtn').onclick = () => {
+                modal.remove();
+            };
         }
 
         socket.on('notification', (message) => {
@@ -570,7 +576,7 @@
                 if (!document.getElementById('joinBtn')) {
                     const notice = document.createElement("div");
                     notice.innerHTML = "<button id='joinBtn'>Join Playback</button>";
-                    const joinArea = document.getElementById('joinButtonArea');
+                    const joinArea = document.getElementById('joinButtonArea'); // This element is now unused
                     if (joinArea) {
                         joinArea.appendChild(notice);
                     } else {
