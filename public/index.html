@@ -8,9 +8,10 @@
 </head>
 <body>
     <div class="center-box">
-        <form action="/create" method="GET">
+        <form action="/upload-and-create" method="POST" enctype="multipart/form-data">
             <input type="text" name="username" placeholder="Host name" required><br>
             <input type="text" name="video" placeholder="Video link" required><br>
+            <input type="file" name="srtSubtitle" accept=".srt" title="Upload SRT Subtitle (Optional)"><br>
             <button type="submit">Start Room</button>
         </form>
     </div>
