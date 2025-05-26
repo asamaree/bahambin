@@ -1,10 +1,10 @@
 module.exports = {
   apps : [{
-    name: "video-sync",   // Application name
+    name: "bahambin",   // Application name changed to "bahambin"
     script: "server.js",  // Main server script
     watch: true,          // Restart the app if files change
     env: {
-      PORT: 3000          // Default port
+      PORT: process.env.PORT || 3000 // Dynamically use the PORT environment variable, fallback to 3000
     }
   }]
 }
