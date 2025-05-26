@@ -5,15 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Video Room</title>
     <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="center-box">
-        <form action="/upload-and-create" method="POST" enctype="multipart/form-data">
-            <input type="text" name="username" placeholder="Host name" required><br>
-            <input type="text" name="video" placeholder="Video link" required><br>
-            <input type="file" name="srtSubtitle" accept=".srt" title="Upload SRT Subtitle (Optional)"><br>
-            <button type="submit">Start Room</button>
-        </form>
+    <div class="main-container">
+        <div class="auth-card">
+            <h1>BahamBin</h1>
+            <p class="tagline">Watch videos together, synchronized, effortlessly.</p>
+            <form action="/upload-and-create" method="POST" enctype="multipart/form-data" class="create-room-form">
+                <div class="form-group">
+                    <input type="text" name="username" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="video" placeholder="Video Link (only .mkv format)" required>
+                </div>
+                <div class="form-group file-upload-group">
+                    <label for="srtSubtitle" class="custom-file-upload">
+                        Choose Subtitle File
+                    </label>
+                    <input type="file" id="srtSubtitle" name="srtSubtitle" accept=".srt" title="Upload SRT Subtitle (Optional)">
+                    <span id="file-name" class="file-name">No file chosen</span>
+                </div>
+                <button type="submit" class="submit-button">Start Room</button>
+            </form>
+        </div>
     </div>
+    <script>
+        // JavaScript to display the selected file name
+        document.getElementById('srtSubtitle').addEventListener('change', function() {
+            const fileNameSpan = document.getElementById('file-name');
+            if (this.files && this.files.length > 0) {
+                fileNameSpan.textContent = this.files[0].name;
+            } else {
+                fileNameSpan.textContent = 'No file chosen';
+            }
+        });
+    </script>
 </body>
 </html>
