@@ -29,6 +29,15 @@ else
     echo "✅ PM2 already installed."
 fi
 
+# NEW: Check and install ffmpeg
+if ! command -v ffmpeg &> /dev/null
+then
+    echo "⬇ ffmpeg not found. Installing ffmpeg..."
+    sudo apt-get install -y ffmpeg
+else
+    echo "✅ ffmpeg already installed."
+fi
+
 # Start the server using pm2
 echo "🚀 Starting the server with pm2..."
 pm2 start ecosystem.config.js --update-env
