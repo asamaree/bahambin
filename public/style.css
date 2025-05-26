@@ -1,21 +1,24 @@
 /* ---- Global Styles ---- */
 body {
-   font-family: 'Vazirmatn', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Vazirmatn', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #121212;
     color: #e0e0e0;
     margin: 0;
     height: 100vh;
     display: flex;
     flex-direction: column;
+    direction: ltr; /* Default to LTR, individual elements handle their own dir */
+    overflow-x: hidden; /* Prevent horizontal scroll when overlay is off-screen */
 }
 
 input, button {
-    padding: 10px;
+    padding: 12px;
     margin: 5px;
-    border-radius: 6px;
+    border-radius: 10px;
     border: 1px solid #333;
     background-color: #1e1e1e;
     color: #e0e0e0;
+    font-size: 1em;
 }
 
 input::placeholder {
@@ -46,7 +49,7 @@ input[type="text"] {
     background-color: #1e1e1e;
 }
 
-/* ---- Notifications ---- */
+/* ---- Notifications Bar ---- */
 .notifications-bar {
     background-color: #1f1f1f;
     color: #e0e0e0;
@@ -59,92 +62,611 @@ input[type="text"] {
     gap: 10px;
 }
 
-/* ---- Room Layout ---- */
+/* User List Toggle button (now just a display) */
+.user-list-toggle {
+    padding: 5px 10px;
+    border-radius: 8px;
+    background-color: #2a2a2a;
+}
+
+
+/* ---- Room Layout (Two Main Columns) ---- */
 .room-container {
-    display: flex;
+    display: flex; /* Main container is flex row */
     flex-direction: row;
     flex: 1;
     height: calc(100vh - 60px);
     padding: 10px;
     box-sizing: border-box;
+    gap: 10px; /* Gap between video and right column wrapper */
     overflow: hidden;
 }
 
 .video-section {
-    flex: 2;
+    flex: 2; /* Video section takes 2 units of flexible space */
     padding: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
-}
-
-.video-section video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 8px;
     background-color: black;
+    border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.chat-section {
-    flex: 1;
+/* Right Column Wrapper (contains user list panel and chat) */
+.right-column-wrapper {
+    flex: 1; /* Takes 1 unit of flexible space */
     display: flex;
-    flex-direction: column;
-    border-left: 1px solid #333;
-    background-color: #1e1e1e;
-    border-radius: 8px;
-    margin-left: 10px;
+    flex-direction: column; /* Stacks its children (panel & chat) vertically */
+    gap: 10px; /* Gap between user list panel and chat section */
     height: 100%;
 }
 
+.chat-section {
+    display: flex;
+    flex-direction: column;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    height: 100%;
+    position: relative;
+    border-left: none;
+    margin-left: 0;
+    padding: 10px; /* Added internal padding to the chat section */
+}
+
+/* User List Panel (inside right-column-wrapper, above chat) */
+.user-list-panel {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    max-height: 200px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.user-list-panel h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #c0c0c0;
+    font-size: 1.2em;
+    text-align: center;
+    font-weight: 600;
+}
+
+.active-user-list-panel {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.user-list-item:hover {
+    background-color: #333;
+}
+
+.user-list-item:last-child {
+    border-bottom: none;
+}
+
+/* NEW: User Avatar Circle */
+.user-avatar {
+    width: 28px; /* Diameter of the circle */
+    height: 28px;
+    border-radius: 50%; /* Make it circular */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em; /* Size of the letter */
+    font-weight: bold;
+    color: #ffffff; /* White letter color */
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-right: 8px; /* Space between avatar and name */
+    text-transform: uppercase; /* Ensure letter is uppercase */
+}
+
+.user-name {
+    font-weight: normal; /* MODIFIED: Normal font weight for the name */
+    display: flex;
+    align-items: center;
+    gap: 0; /* No gap between avatar and name, as avatar has margin-right */
+    color: #e0e0e0; /* MODIFIED: Static color for the name text */
+    font-size: 1em;
+    flex-grow: 1; /* Allow name to take available space */
+}
+
+.user-list-badge {
+    background-color: rgba(0, 188, 212, 0.2);
+    color: #00bcd4;
+    font-size: 0.65em;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.user-controls {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.user-list-item:hover .user-controls {
+    opacity: 1;
+}
+
+.control-button {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 50%;
+    font-size: 1.0em;
+    transition: background-color 0.2s, color 0.2s;
+    color: #b0b0b0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+.transfer-button {
+    /* Styles are mostly inherited from .control-button now */
+}
+
+.transfer-button i {
+    font-size: 0.9em;
+    margin: 0;
+}
+
+/* Chat messages container styling */
 .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 10px;
-    border-bottom: 1px solid #333;
+    padding: 15px;
     background-color: #212121;
+    border-radius: 10px;
+    gap: 10px;
+    scroll-behavior: smooth;
 }
 
+/* Wrapper for message bubble and reply/react buttons */
+.chat-message-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    position: relative;
+    max-width: 100%;
+    flex-wrap: wrap;
+    padding-bottom: 30px;
+}
+
+/* Alignment for self messages (row) */
+.chat-message-row-self {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* Alignment for other messages (row) */
+.chat-message-row-other {
+    align-self: flex-start;
+    flex-direction: row;
+    margin-right: auto;
+    margin-left: 0;
+}
+
+/* Individual chat message styling (common to all messages) */
+.chat-message {
+    padding: 10px 15px;
+    border-radius: 20px;
+    word-wrap: break-word;
+    max-width: 80%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    line-height: 1.4;
+}
+
+/* Styling for messages from the current user */
+.chat-message-self {
+    background-color: #007bff;
+    color: #ffffff;
+    border-bottom-right-radius: 6px;
+}
+
+/* Styling for messages from other users */
+.chat-message-other {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border-bottom-left-radius: 6px;
+}
+
+/* Header for username and timestamp */
+.chat-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+
+/* Username styling */
+.chat-username {
+    font-weight: bold;
+    margin-right: 8px;
+    white-space: nowrap;
+}
+
+/* Host badge styling (for chat messages) */
+.host-badge {
+    background-color: #ffd700;
+    color: #333;
+    font-size: 0.65em;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+/* Timestamp styling */
+.chat-timestamp {
+    font-size: 0.7em;
+    color: #aaa;
+    opacity: 0.8;
+}
+
+/* Message text styling */
+.chat-text {
+    margin: 0;
+    padding: 0;
+}
+
+/* Chat Notification Styling */
+.chat-notification {
+    align-self: center;
+    text-align: center;
+    max-width: 70%;
+    background-color: #282828;
+    color: #b0b0b0;
+    font-size: 0.85em;
+    padding: 8px 12px;
+    border-radius: 15px;
+    margin: 5px auto;
+    box-shadow: none;
+    opacity: 0.9;
+}
+
+.chat-notification .notification-timestamp {
+    display: block;
+    font-size: 0.7em;
+    color: #888;
+    margin-bottom: 3px;
+}
+
+.chat-notification .notification-text {
+    margin: 0;
+    font-weight: normal;
+}
+
+/* Reply Preview Area */
+.reply-preview-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2a2a;
+    padding: 10px 15px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom: 1px solid #333;
+    margin-top: auto;
+}
+
+.reply-preview-content {
+    flex-grow: 1;
+    padding-right: 10px;
+    overflow: hidden;
+}
+
+.reply-preview-username {
+    font-weight: bold;
+    color: #00bcd4;
+    font-size: 0.9em;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.reply-preview-message {
+    font-size: 0.8em;
+    color: #b0b0b0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.cancel-reply-button {
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+    margin: 0;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.cancel-reply-button:hover {
+    background-color: #444;
+}
+
+/* Quoted message inside a chat bubble */
+.chat-replied-to {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-left: 3px solid #00bcd4;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 0.85em;
+    opacity: 0.9;
+}
+
+/* Styling for the username within the quoted reply */
+.chat-replied-to .replied-to-username {
+    font-weight: bold;
+    color: #00bcd4;
+    display: block;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-replied-to .replied-to-text {
+    color: #c0c0c0;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Reply and React buttons on individual messages (outside bubble) */
+.reply-button, .react-button {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 1.1em;
+    cursor: pointer;
+    padding: 5px;
+    margin: 0;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s, background-color 0.2s, transform 0.2s;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Show buttons on hover of the entire message row */
+.chat-message-row:hover .reply-button,
+.chat-message-row:hover .react-button {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Input/Send message area */
 .chat-box {
     display: flex;
     padding: 10px;
     border-top: 1px solid #333;
+    align-items: center;
 }
 
 .chat-box input {
     flex: 1;
-    padding: 10px;
-    margin-right: 5px;
+    padding: 12px 15px;
+    margin-right: 8px;
     background-color: #1e1e1e;
+    border-radius: 25px;
+    border: none;
 }
 
 .chat-box button {
-    padding: 10px;
+    padding: 12px 18px;
+    border-radius: 25px;
+    font-size: 1.2em;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+/* Style for Font Awesome icons within buttons */
+.chat-box button i {
+    font-size: 1em;
+    color: #e0e0e0;
+}
+
+.reply-button i, .react-button i {
+    font-size: 0.8em;
+    color: #b0b0b0;
+}
+
+/* Emoji Picker Styling */
+.emoji-picker {
+    position: absolute;
+    z-index: 1000;
+    background-color: #2a2a2a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    min-width: 150px;
+}
+
+.emoji-button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 5px;
+    margin: 0;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    line-height: 1;
+}
+
+.emoji-button:hover {
+    background-color: #3e3e3e;
+}
+
+/* Reactions Container (now a flex item within chat-message-row) */
+.reactions-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 0 5px;
+    z-index: 1;
+    justify-content: flex-start;
+}
+
+/* Adjust reactions container for self messages */
+.chat-message-row-self .reactions-container {
+    justify-content: flex-end;
+}
+
+
+/* Individual reaction bubble styling */
+.reaction-bubble {
+    background-color: rgba(255, 255, 255, 0.15);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.reaction-bubble:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.reaction-bubble span {
+    margin-left: 3px;
+    font-weight: bold;
+}
+
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
     .room-container {
-        flex-direction: column;
+        flex-direction: column; /* Stack columns vertically on small screens */
         height: auto;
+        padding: 10px;
+        gap: 10px; /* Space between stacked sections */
+    }
+    .video-section,
+    .right-column-wrapper { /* Right column wrapper takes full width */
+        width: 100%;
+        margin: 0;
+        height: auto;
+    }
+    .right-column-wrapper {
+        flex-direction: column; /* Stack panel and chat within wrapper */
+        gap: 10px;
     }
     .chat-section {
-        margin-left: 0;
-        border-left: none;
-        margin-top: 10px;
-        height: auto;
+        height: auto; /* Allow chat to take natural height */
     }
+
     .notifications-bar {
         flex-direction: column;
         align-items: flex-start;
     }
-    .video-section {
-        height: auto;
+    .chat-message {
+        max-width: 90%;
     }
-    .video-section video {
+    .chat-notification {
+        max-width: 90%;
+    }
+    /* Adjust button sizes for smaller screens */
+    .reply-button, .react-button {
+        font-size: 0.9em;
+        padding: 3px;
+    }
+    .reply-button i, .react-button i {
+        font-size: 0.7em;
+    }
+    .emoji-picker {
+        padding: 5px;
+        gap: 3px;
+        min-width: unset;
+    }
+    .emoji-button {
+        font-size: 1.2em;
+        padding: 3px;
+    }
+    .reactions-container {
+        margin-top: 5px;
+        padding: 0 3px;
+        gap: 5px;
+    }
+    /* User list panel mobile adjustments */
+    .user-list-panel {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .user-list-panel h4 {
+        margin-bottom: 8px;
+    }
+    .user-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        padding: 6px 0;
+    }
+    .user-controls {
         width: 100%;
-        height: auto;
+        justify-content: flex-start;
+    }
+    .control-button {
+        flex-grow: 1;
+        text-align: center;
+        padding: 6px 10px;
+        font-size: 0.8em;
+    }
+    .control-button i {
+        margin-right: 3px;
+        font-size: 0.8em;
     }
 }
