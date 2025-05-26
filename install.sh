@@ -29,7 +29,7 @@ else
     echo "✅ PM2 already installed."
 fi
 
-# NEW: Check and install ffmpeg
+# Check and install ffmpeg
 if ! command -v ffmpeg &> /dev/null
 then
     echo "⬇ ffmpeg not found. Installing ffmpeg..."
@@ -38,10 +38,21 @@ else
     echo "✅ ffmpeg already installed."
 fi
 
-# Start the server using pm2
-echo "🚀 Starting the server with pm2..."
-pm2 start ecosystem.config.js --update-env
+# NEW: Ask the user for the desired port
+read -p "Enter the port you want the server to run on (default: 3000): " CUSTOM_PORT
+
+# Set default port if user input is empty
+if [ -z "$CUSTOM_PORT" ]; then
+    CUSTOM_PORT=3000
+fi
+
+echo "🚀 Starting the server with pm2 on port $CUSTOM_PORT..."
+
+# Start the server using pm2, passing the custom port as an environment variable
+# We use --env to pass the environment variable to the PM2 process
+pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name video-sync-app --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch
+pm2 set env PORT $CUSTOM_PORT video-sync-app # Set the PORT environment variable for the specific app
 pm2 save
 
-echo "✅ All done! The Video Sync server is running on port 3000."
-echo "🌐 Open your browser and go to http://YOUR_SERVER_IP:3000"
+echo "✅ All done! The Video Sync server is running on port $CUSTOM_PORT."
+echo "🌐 Open your browser and go to http://YOUR_SERVER_IP:$CUSTOM_PORT"
