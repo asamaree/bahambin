@@ -6,33 +6,48 @@
     <title>Room {{roomId}}</title>
     <link rel="stylesheet" href="/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 
     <div class="notifications-bar">
         <div id="roomTitle">Room: {{roomId}}</div>
-        <div id="notifications">event & notifications</div>
         <div>
             <span id="roleDisplay">Determining role...</span> | 
-            <span id="userList">Users in room: </span>
+            <span id="userListToggle" class="user-list-toggle">Users in room: <span id="userCount">0</span></span>
         </div>
         <div id="joinButtonArea"></div>
     </div>
 
     <div class="room-container">
         <div class="video-section">
-            <video id="player" controls style="width: 100%; height: 100%; background-color: black; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+            <video id="player" controls>
                 <source src="{{video}}">
                 <track label="English" kind="subtitles" srclang="en" src="{{subtitle}}" default>
                 Your browser does not support the video tag.
             </video>
         </div>
 
-        <div class="chat-section">
-            <div id="chatMessages" class="chat-messages"></div>
-            <div class="chat-box">
-                <input type="text" id="chatInput" placeholder="Type a message...">
-                <button onclick="sendChat()" title="Send">📨</button>
+        <div class="right-column-wrapper">
+            <div id="userListPanel" class="user-list-panel">
+                <h4>Connected Users</h4>
+                <ul id="activeUserListPanel" class="active-user-list-panel">
+                    </ul>
+            </div>
+            <div class="chat-section">
+                <div id="chatMessages" class="chat-messages"></div>
+                <div id="emojiPicker" class="emoji-picker" style="display: none;"></div>
+                <div id="replyPreviewArea" class="reply-preview-area" style="display: none;">
+                    <div class="reply-preview-content">
+                        <span class="reply-preview-username"></span>
+                        <p class="reply-preview-message"></p>
+                    </div>
+                    <button class="cancel-reply-button" onclick="cancelReply()">✕</button>
+                </div>
+                <div class="chat-box">
+                    <input type="text" id="chatInput" placeholder="Type a message...">
+                    <button onclick="sendChat()" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>
     </div>
@@ -54,13 +69,51 @@
         const playerElement = document.getElementById('player');
 
         const roleDisplay = document.getElementById("roleDisplay");
-        const userListDiv = document.getElementById("userList");
-        const notificationsDiv = document.getElementById("notifications");
+        const userCountSpan = document.getElementById("userCount");
+        const userListToggle = document.getElementById("userListToggle");
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
+        const replyPreviewArea = document.getElementById('replyPreviewArea');
+        const replyPreviewUsername = replyPreviewArea.querySelector('.reply-preview-username');
+        const replyPreviewMessage = replyPreviewArea.querySelector('.reply-preview-message');
+        const emojiPicker = document.getElementById('emojiPicker');
+        const chatSection = document.querySelector('.chat-section');
+        const userListPanel = document.getElementById('userListPanel');
+        const activeUserListPanel = document.getElementById('activeUserListPanel');
 
         let isSyncing = false;
         let isHost = false;
+        let replyingToMessage = null;
+        let currentMessageForReaction = null;
+        let currentUsersInRoom = [];
+        let currentRoomHostId = null;
+
+        const availableEmojis = ['👍', '❤️', '😂', '😮', '😢', '👏', '🔥'];
+
+        function getUserColor(userName) {
+            let hash = 0;
+            for (let i = 0; i < userName.length; i++) {
+                hash = userName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let color = '#';
+            for (let i = 0; i < 3; i++) {
+                const value = (hash >> (i * 8)) & 0xFF;
+                color += ('00' + value.toString(16)).substr(-2);
+            }
+            const r = parseInt(color.substring(1, 3), 16);
+            const g = parseInt(color.substring(3, 5), 16);
+            const b = parseInt(color.substring(5, 7), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            if (brightness < 100) {
+                return `hsl(${hash % 360}, 70%, 65%)`;
+            }
+            return `hsl(${hash % 360}, 70%, 50%)`;
+        }
+
+        function containsRTL(text) {
+            const rtlRegex = /[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+            return rtlRegex.test(text);
+        }
 
         socket.on('role', (data) => {
             isHost = data.isHost;
@@ -69,24 +122,295 @@
             } else {
                 roleDisplay.innerText = 'You are a Guest.';
             }
+            updateUserListDisplay(currentUsersInRoom); 
         });
 
         socket.on('userList', (data) => {
-            userListDiv.innerText = "Users in room: " + data.users.join(", ");
+            console.log('Received userList:', data.users, 'Host ID:', data.currentHostId);
+            currentUsersInRoom = data.users;
+            currentRoomHostId = data.currentHostId;
+            userCountSpan.innerText = data.users.length;
+            updateUserListDisplay(data.users);
         });
 
+        function updateUserListDisplay(users) {
+            console.log('updateUserListDisplay called with users:', users, 'activeUserListPanel:', activeUserListPanel);
+            if (!activeUserListPanel) {
+                console.error('activeUserListPanel element not found in updateUserListDisplay!');
+                return;
+            }
+            activeUserListPanel.innerHTML = '';
+            if (users.length === 0) {
+                const noUsersItem = document.createElement('li');
+                noUsersItem.innerText = 'No other users connected.';
+                noUsersItem.style.color = '#888';
+                activeUserListPanel.appendChild(noUsersItem);
+                return;
+            }
+
+            users.forEach(user => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('user-list-item');
+
+                const userColor = getUserColor(user.name); // Get the dynamic color
+
+                // NEW: Create profile circle
+                const userAvatar = document.createElement('div');
+                userAvatar.classList.add('user-avatar');
+                userAvatar.style.backgroundColor = userColor;
+                userAvatar.innerText = user.name.charAt(0).toUpperCase(); // First letter, uppercase
+                listItem.appendChild(userAvatar); // Append avatar first
+
+                const userNameSpan = document.createElement('span');
+                userNameSpan.classList.add('user-name');
+                userNameSpan.innerText = user.name;
+                userNameSpan.style.color = '#e0e0e0'; // MODIFIED: Static color for the name text
+                listItem.appendChild(userNameSpan); // Append name next
+
+                if (user.id === socket.id) {
+                    userNameSpan.innerText += ' (You)';
+                }
+                if (user.id === currentRoomHostId) {
+                    const hostBadge = document.createElement('span');
+                    hostBadge.classList.add('host-badge', 'user-list-badge');
+                    hostBadge.innerText = 'Host';
+                    userNameSpan.appendChild(hostBadge);
+                }
+
+                if (isHost && user.id !== socket.id) {
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.classList.add('user-controls');
+
+                    const transferButton = document.createElement('button');
+                    transferButton.classList.add('control-button', 'transfer-button');
+                    transferButton.innerHTML = '<i class="fa-solid fa-crown"></i>';
+                    transferButton.title = `Make ${user.name} Host`;
+                    transferButton.onclick = () => transferHost(user.id);
+                    controlsDiv.appendChild(transferButton);
+
+                    listItem.appendChild(controlsDiv);
+                }
+
+                activeUserListPanel.appendChild(listItem);
+            });
+        }
+
+        function transferHost(newHostId) {
+            if (confirm('Are you sure you want to transfer host to this user?')) {
+                socket.emit('transferHost', { room, newHostId: newHostId });
+            }
+        }
+
         socket.on('notification', (message) => {
-            notificationsDiv.innerText = message;
-            setTimeout(() => {
-                notificationsDiv.innerText = "";
-            }, 3000);
+            const notificationElement = document.createElement('div');
+            notificationElement.classList.add('chat-notification');
+
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            notificationElement.innerHTML = `
+                <span class="notification-timestamp">${timestamp}</span>
+                <p class="notification-text">${message}</p>
+            `;
+            
+            if (containsRTL(message)) {
+                notificationElement.setAttribute('dir', 'rtl');
+            } else {
+                notificationElement.setAttribute('dir', 'ltr');
+            }
+
+            chatMessages.appendChild(notificationElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
+
+        socket.on('initialChatState', (data) => {
+            console.log('Received initialChatState:', data);
+            chatMessages.innerHTML = '';
+            data.messages.forEach(message => {
+                renderMessage(message, data.reactions[message.id] || {});
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        socket.on('reactionUpdate', (data) => {
+            console.log('Received reactionUpdate:', data);
+            const messageRow = document.querySelector(`.chat-message-row[data-message-id="${data.messageId}"]`);
+            if (messageRow) {
+                renderReactions(data.messageId, data.reactions, messageRow);
+            }
+        });
+
+        function renderReactions(messageId, reactionsData, messageRowElement = null) {
+            console.log('Rendering reactions for message:', messageId, reactionsData);
+            
+            let targetRow = messageRowElement;
+            if (!targetRow) {
+                targetRow = document.querySelector(`.chat-message-row[data-message-id="${messageId}"]`);
+            }
+
+            if (!targetRow) {
+                console.warn('Message row not found for reactions:', messageId);
+                return;
+            }
+
+            let reactionsContainer = targetRow.querySelector('.reactions-container');
+            if (!reactionsContainer) {
+                reactionsContainer = document.createElement('div');
+                reactionsContainer.classList.add('reactions-container');
+                targetRow.appendChild(reactionsContainer);
+            }
+            reactionsContainer.innerHTML = '';
+
+            const sortedEmojis = Object.keys(reactionsData).sort((a, b) => {
+                const countA = reactionsData[a].count;
+                const countB = reactionsData[b].count;
+                if (countA !== countB) {
+                    return countB - countA;
+                }
+                return a.localeCompare(b);
+            });
+
+            sortedEmojis.forEach(emoji => {
+                const reaction = reactionsData[emoji];
+                if (reaction.count > 0) {
+                    const reactionSpan = document.createElement('span');
+                    reactionSpan.classList.add('reaction-bubble');
+                    reactionSpan.innerText = `${emoji} ${reaction.count}`;
+                    reactionSpan.onclick = (e) => {
+                        e.stopPropagation();
+                        addReaction(messageId, emoji);
+                    };
+                    reactionsContainer.appendChild(reactionSpan);
+                }
+            });
+
+            if (Object.keys(reactionsData).length === 0) {
+                reactionsContainer.style.display = 'none';
+            } else {
+                reactionsContainer.style.display = 'flex';
+            }
+        }
+
+        function renderEmojiPicker() {
+            console.log('Rendering emoji picker...');
+            emojiPicker.innerHTML = '';
+            availableEmojis.forEach(emoji => {
+                const emojiButton = document.createElement('button');
+                emojiButton.classList.add('emoji-button');
+                emojiButton.innerText = emoji;
+                emojiButton.onclick = (e) => {
+                    e.stopPropagation();
+                    addReaction(currentMessageForReaction, emoji);
+                    toggleEmojiPicker(null);
+                };
+                emojiPicker.appendChild(emojiButton);
+            });
+            console.log('Emoji picker populated. Child count:', emojiPicker.children.length);
+        }
+        renderEmojiPicker();
+
+        function toggleEmojiPicker(messageId, event = null) {
+            console.log('--- toggleEmojiPicker START ---');
+            console.log('Incoming messageId:', messageId);
+            console.log('Current currentMessageForReaction:', currentMessageForReaction);
+            console.log('emojiPicker.style.display (before logic):', emojiPicker.style.display);
+
+            const isPickerCurrentlyOpen = emojiPicker.style.display === 'flex';
+            const isSameMessage = currentMessageForReaction === messageId;
+
+            if (isPickerCurrentlyOpen && isSameMessage) {
+                console.log('Action: Closing picker (clicked same message again).');
+                emojiPicker.style.display = 'none';
+                currentMessageForReaction = null;
+            } else if (messageId && event) {
+                console.log('Action: Opening picker.');
+                currentMessageForReaction = messageId;
+                
+                const reactButtonRect = event.target.closest('.react-button').getBoundingClientRect();
+                console.log('React button rect:', reactButtonRect);
+
+                const chatSectionRect = chatSection.getBoundingClientRect();
+                
+                let pickerTop = reactButtonRect.top - chatSectionRect.top - emojiPicker.offsetHeight - 10;
+                let pickerLeft = reactButtonRect.left - chatSectionRect.left;
+
+                if (pickerLeft + emojiPicker.offsetWidth > chatSectionRect.width) {
+                    pickerLeft = chatSectionRect.width - emojiPicker.offsetWidth - 10;
+                }
+                if (pickerLeft < 0) {
+                    pickerLeft = 10;
+                }
+                if (pickerTop < 0) {
+                    pickerTop = reactButtonRect.bottom - chatSectionRect.top + 10;
+                }
+
+                emojiPicker.style.top = `${pickerTop}px`;
+                emojiPicker.style.left = `${pickerLeft}px`;
+                emojiPicker.style.right = 'auto';
+                emojiPicker.style.bottom = 'auto';
+
+                emojiPicker.style.display = 'flex';
+                console.log('Emoji picker should be visible. Current style:', emojiPicker.style.cssText);
+            } else {
+                console.log('Action: Closing picker (messageId is null or event missing).');
+                emojiPicker.style.display = 'none';
+                currentMessageForReaction = null;
+            }
+            console.log('--- toggleEmojiPicker END ---');
+        }
+
+        document.addEventListener('click', (event) => {
+            if (emojiPicker.style.display === 'flex' && !emojiPicker.contains(event.target) && !event.target.closest('.react-button')) {
+                console.log('Document click: Closing emoji picker.');
+                toggleEmojiPicker(null);
+            }
+            // User list panel is always visible now, no auto-close logic needed
+        });
+
+        function addReaction(messageId, emoji) {
+            console.log('Emitting addReaction:', { room, messageId, emoji });
+            socket.emit('addReaction', { room, messageId, emoji });
+        }
+
+        function replyToMessage(messageId) {
+            const messageElement = document.querySelector(`.chat-message[data-id="${messageId}"]`);
+            if (messageElement) {
+                const username = messageElement.querySelector('.chat-username').innerText.replace('Host', '').trim();
+                const messageText = messageElement.querySelector('.chat-text').innerText;
+                
+                replyingToMessage = {
+                    id: messageId,
+                    username: username,
+                    message: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : '')
+                };
+
+                replyPreviewUsername.innerText = replyingToMessage.username;
+                replyPreviewMessage.innerText = replyingToMessage.message;
+                replyPreviewArea.style.display = 'flex';
+                chatInput.focus();
+            }
+        }
+
+        function cancelReply() {
+            replyingToMessage = null;
+            replyPreviewArea.style.display = 'none';
+            replyPreviewUsername.innerText = '';
+            replyPreviewMessage.innerText = '';
+        }
 
         function sendChat() {
             const message = chatInput.value.trim();
             if (message) {
-                socket.emit('chatMessage', { room, username, message });
+                const chatData = { room, username, message };
+                if (replyingToMessage) {
+                    chatData.repliedTo = {
+                        id: replyingToMessage.id,
+                        username: replyingToMessage.username,
+                        message: replyingToMessage.message
+                    };
+                }
+                socket.emit('chatMessage', chatData);
                 chatInput.value = '';
+                cancelReply();
             }
         }
 
@@ -97,12 +421,118 @@
             }
         });
 
+        function renderMessage(data, currentReactions = {}) {
+            console.log('Rendering message:', data.id, 'with reactions:', currentReactions);
+            const messageRow = document.createElement('div');
+            messageRow.classList.add('chat-message-row');
+            messageRow.setAttribute('data-message-id', data.id);
+
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('chat-message');
+            messageContainer.setAttribute('data-id', data.id);
+
+            const isSelfMessage = (data.username === username);
+
+            if (isSelfMessage) {
+                messageContainer.classList.add('chat-message-self');
+                messageRow.classList.add('chat-message-row-self');
+            } else {
+                messageContainer.classList.add('chat-message-other');
+                messageRow.classList.add('chat-message-row-other');
+            }
+
+            const header = document.createElement('div');
+            header.classList.add('chat-message-header');
+
+            const usernameSpan = document.createElement('span');
+            usernameSpan.classList.add('chat-username');
+            usernameSpan.innerText = data.username;
+            usernameSpan.style.color = getUserColor(data.username);
+            if (containsRTL(data.username)) {
+                usernameSpan.setAttribute('dir', 'rtl');
+            } else {
+                usernameSpan.setAttribute('dir', 'ltr');
+            }
+
+            if (data.isHost) {
+                const hostBadge = document.createElement('span');
+                hostBadge.classList.add('host-badge');
+                hostBadge.innerText = 'Host';
+                usernameSpan.appendChild(hostBadge);
+            }
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.classList.add('chat-timestamp');
+            timestampSpan.innerText = data.timestamp;
+
+            header.appendChild(usernameSpan);
+            header.appendChild(timestampSpan);
+            messageContainer.appendChild(header);
+
+            if (data.repliedTo) {
+                const repliedToDiv = document.createElement('div');
+                repliedToDiv.classList.add('chat-replied-to');
+                if (containsRTL(data.repliedTo.message) || containsRTL(data.repliedTo.username)) {
+                    repliedToDiv.setAttribute('dir', 'rtl');
+                } else {
+                    repliedToDiv.setAttribute('dir', 'ltr');
+                }
+                repliedToDiv.innerHTML = `
+                    <span class="replied-to-username" style="color: ${getUserColor(data.repliedTo.username)};">${data.repliedTo.username}</span>
+                    <p class="replied-to-text">${data.repliedTo.message}</p>
+                `;
+                messageContainer.appendChild(repliedToDiv);
+            }
+
+            const messageText = document.createElement('p');
+            messageText.classList.add('chat-text');
+            messageText.innerText = data.message;
+            if (containsRTL(data.message)) {
+                messageText.setAttribute('dir', 'rtl');
+            } else {
+                messageText.setAttribute('dir', 'ltr');
+            }
+
+            messageContainer.appendChild(messageText);
+
+            const replyButton = document.createElement('button');
+            replyButton.classList.add('reply-button');
+            replyButton.innerHTML = '<i class="fa-solid fa-reply"></i>';
+            replyButton.title = 'Reply';
+            replyButton.onclick = () => replyToMessage(data.id);
+            
+            let reactButton = null;
+            if (!isSelfMessage) {
+                reactButton = document.createElement('button');
+                reactButton.classList.add('react-button');
+                reactButton.innerHTML = '<i class="fa-regular fa-face-smile"></i>';
+                reactButton.title = 'React';
+                reactButton.onclick = (event) => toggleEmojiPicker(data.id, event);
+            }
+
+            if (isSelfMessage) {
+                messageRow.appendChild(messageContainer);
+                messageRow.appendChild(replyButton);
+            } else {
+                messageRow.appendChild(messageContainer);
+                messageRow.appendChild(replyButton);
+                if (reactButton) messageRow.appendChild(reactButton);
+            }
+
+            chatMessages.appendChild(messageRow);
+            
+            const reactionsContainer = document.createElement('div');
+            reactionsContainer.classList.add('reactions-container');
+            messageRow.appendChild(reactionsContainer);
+            
+            renderReactions(data.id, currentReactions, messageRow);
+        }
+
         socket.on('chatMessage', (data) => {
-            const msg = document.createElement('div');
-            msg.innerText = data.username + ": " + data.message;
-            chatMessages.appendChild(msg);
+            renderMessage(data);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
+
 
         function sendState() {
             if (!isHost) return;
