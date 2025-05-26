@@ -11,58 +11,186 @@ body {
     overflow-x: hidden; /* Prevent horizontal scroll when overlay is off-screen */
 }
 
+/* Base styles for inputs and buttons, overridden by more specific classes */
 input, button {
     padding: 12px;
-    margin: 5px;
-    border-radius: 10px;
+    /* Removed margin: 5px; to allow for more controlled spacing within forms */
+    border-radius: 10px; /* Consistent corner radius for general inputs/buttons */
     border: 1px solid #333;
     background-color: #1e1e1e;
     color: #e0e0e0;
     font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, transform 0.1s ease;
 }
 
 input::placeholder {
     color: #888;
 }
 
+/* General input focus style for consistency */
+input:focus {
+    outline: none;
+    border-color: #00bcd4; /* Highlight border on focus */
+    box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3); /* Subtle glow on focus */
+}
+
+/* General button styles, overridden by more specific classes */
 button {
     background-color: #00bcd4;
     border: none;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    border-radius: 10px; /* Consistent corner radius for general buttons */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Consistent shadow */
 }
 
 button:hover {
     background-color: #0097a7;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* More prominent shadow on hover */
 }
 
-input[type="text"] {
-    width: 90%;
+button:active {
+    transform: translateY(1px); /* Subtle press effect */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Reduced shadow on press */
 }
 
-.center-box {
-    width: 300px;
-    margin: 150px auto;
-    padding: 20px;
-    border: 1px solid #333;
-    border-radius: 10px;
-    background-color: #1e1e1e;
-}
+/* Removed global width for text inputs */
+/* input[type="text"] { width: 90%; } */
 
-/* ---- Notifications Bar ---- */
-.notifications-bar {
-    background-color: #1f1f1f;
-    color: #e0e0e0;
-    padding: 10px;
-    font-weight: bold;
+/* ---- Main Container for Auth Page ---- */
+.main-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
+    min-height: 100vh; /* Ensure it takes full viewport height */
+    background: linear-gradient(135deg, #1a1a1a, #0a0a0a); /* Subtle gradient background */
+    padding: 20px; /* Add some padding for smaller screens */
+    box-sizing: border-box;
 }
 
-/* User List Toggle button (now just a display) */
+/* ---- Auth Card (formerly .center-box) ---- */
+.auth-card {
+    width: 100%;
+    max-width: 400px; /* Increased max-width for a more substantial card */
+    padding: 30px; /* More padding inside the card */
+    border: 1px solid #282828; /* Slightly darker border */
+    border-radius: 15px; /* More prominent rounded corners */
+    background-color: #1e1e1e;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.8); /* More pronounced shadow */
+    text-align: center; /* Center content within the card */
+}
+
+.auth-card h1 {
+    color: #e0e0e0; /* Light color for the main title */
+    margin-bottom: 5px; /* Space below main title */
+    font-size: 2.5em; /* Larger main heading */
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.auth-card h2 {
+    color: #00bcd4; /* Accent color for the heading */
+    margin-bottom: 15px; /* Space below heading */
+    font-size: 1.8em; /* Larger heading */
+    font-weight: 700;
+}
+
+.auth-card .tagline {
+    color: #b0b0b0; /* Subtler color for tagline */
+    font-size: 1em;
+    margin-bottom: 25px; /* Space below tagline */
+    line-height: 1.4;
+    max-width: 80%; /* Constrain width for readability */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Styles for the form within auth-card */
+.auth-card .create-room-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Increased space between form groups */
+    align-items: stretch; /* Stretch items to fill width */
+    /* Removed padding from here. The auth-card's padding will now handle the spacing. */
+    padding: 0; 
+}
+
+.auth-card .form-group {
+    width: 100%; /* Make form groups take full width */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align labels/inputs to the left within group */
+    /* No padding here. Inputs/buttons will have their own internal padding. */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+.auth-card .form-group input[type="text"] {
+    width: 100%; /* Text inputs fill the form-group width */
+    margin-bottom: 0; /* Ensure no extra margin below text inputs */
+    padding: 14px; /* Internal padding for inputs */
+    border-radius: 8px; /* Consistent with other inputs */
+    background-color: #2a2a2a; /* Slightly darker input background */
+    border: 1px solid #3a3a3a; /* Subtle input border */
+    box-sizing: border-box; /* Ensures padding is included in the 100% width */
+}
+
+/* Custom styling for the file upload button */
+.custom-file-upload {
+    display: block; /* Make it a block element to take full width */
+    padding: 14px 15px; /* Internal padding for the button */
+    cursor: pointer;
+    background-color: #444; /* Changed to a secondary, darker color */
+    color: #e0e0e0;
+    border-radius: 8px; /* Consistent corner radius */
+    border: none;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 1em;
+    text-align: center;
+    width: 100%; /* Match text input width */
+    margin-bottom: 8px; /* Space between button and file name */
+    box-sizing: border-box; /* Ensures padding is included in the 100% width */
+}
+
+.custom-file-upload:hover {
+    background-color: #555; /* Darker hover for the new color */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.custom-file-upload:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Hide the actual file input */
+.form-group input[type="file"] {
+    display: none;
+}
+
+.file-name {
+    font-size: 0.85em; /* Slightly smaller font for file name */
+    color: #b0b0b0;
+    text-align: left; /* Align file name to the left */
+    width: 100%;
+    word-break: break-all; /* Prevent overflow for long file names */
+    padding: 0 15px; /* Add horizontal padding to align with inputs */
+    box-sizing: border-box; /* Ensures padding is included in the 100% width */
+}
+
+.auth-card .submit-button {
+    width: 100%; /* Submit button fills the form width */
+    margin-top: 10px; /* Space above the button */
+    padding: 15px; /* Larger padding for submit button */
+    font-size: 1.1em; /* Slightly larger font for submit button */
+    font-weight: bold;
+    border-radius: 8px; /* Consistent corner radius */
+    box-sizing: border-box; /* Ensures padding is included in the 100% width */
+}
+
+
+/* ---- Notifications Bar (Removed) ---- */
+/* The .notifications-bar styles have been removed as the element is no longer in room.html */
+
+/* User List Toggle button (now just a display) - This style block is kept but the element is removed in HTML */
 .user-list-toggle {
     padding: 5px 10px;
     border-radius: 8px;
@@ -75,7 +203,8 @@ input[type="text"] {
     display: flex; /* Main container is flex row */
     flex-direction: row;
     flex: 1;
-    height: calc(100vh - 60px);
+    /* Adjusted height: 100vh minus 20px for the 10px top/bottom padding of room-container */
+    height: calc(100vh - 20px); 
     padding: 10px;
     box-sizing: border-box;
     gap: 10px; /* Gap between video and right column wrapper */
@@ -83,20 +212,29 @@ input[type="text"] {
 }
 
 .video-section {
-    flex: 2; /* Video section takes 2 units of flexible space */
+    flex: 3; /* Video section takes more flexible space (e.g., 3 units) */
     padding: 10px;
+    padding-bottom: 10px; /* Added padding to the bottom of the video player box */
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
     background-color: black;
-    border-radius: 10px;
+    border-radius: 10px; /* Balanced corner radius */
     box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+    border: 1px solid #333; /* Added border to the video section */
+}
+
+/* Ensure the video element fills its container */
+.video-section video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ensures the video scales properly without cropping */
 }
 
 /* Right Column Wrapper (contains user list panel and chat) */
 .right-column-wrapper {
-    flex: 1; /* Takes 1 unit of flexible space */
+    flex: 1; /* Takes less flexible space (e.g., 1 unit) to decrease width by 1/4 relative to video */
     display: flex;
     flex-direction: column; /* Stacks its children (panel & chat) vertically */
     gap: 10px; /* Gap between user list panel and chat section */
@@ -107,23 +245,27 @@ input[type="text"] {
     display: flex;
     flex-direction: column;
     background-color: #1e1e1e;
-    border-radius: 10px;
-    height: 100%;
+    border-radius: 10px; /* Balanced corner radius */
+    /* Removed height: 100% and added flex-grow to properly fill remaining space */
+    flex-grow: 1; 
     position: relative;
     border-left: none;
     margin-left: 0;
     padding: 10px; /* Added internal padding to the chat section */
+    border: 1px solid #333; /* Added border to the chat section */
+    min-height: 0; /* Allows the flex item to shrink below its content size */
 }
 
 /* User List Panel (inside right-column-wrapper, above chat) */
 .user-list-panel {
     background-color: #1e1e1e;
-    border-radius: 10px;
+    border-radius: 10px; /* Balanced corner radius */
     padding: 15px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     max-height: 200px;
     overflow-y: auto;
     flex-shrink: 0;
+    border: 1px solid #333; /* Added border to the user list panel */
 }
 
 .user-list-panel h4 {
@@ -150,7 +292,7 @@ input[type="text"] {
     align-items: center;
     padding: 8px 12px;
     background-color: #2a2a2a;
-    border-radius: 8px;
+    border-radius: 8px; /* Balanced corner radius */
     transition: background-color 0.2s;
     position: relative;
     overflow: hidden;
@@ -240,13 +382,14 @@ input[type="text"] {
 
 /* Chat messages container styling */
 .chat-messages {
-    flex: 1;
-    overflow-y: auto;
+    flex: 1; /* Allows it to grow and shrink */
+    overflow-y: auto; /* Enables vertical scrolling */
     padding: 15px;
     background-color: #212121;
-    border-radius: 10px;
+    border-radius: 8px; /* Balanced corner radius */
     gap: 10px;
     scroll-behavior: smooth;
+    min-height: 0; /* Important for flex items to shrink below content size */
 }
 
 /* Wrapper for message bubble and reply/react buttons */
@@ -279,7 +422,7 @@ input[type="text"] {
 /* Individual chat message styling (common to all messages) */
 .chat-message {
     padding: 10px 15px;
-    border-radius: 20px;
+    border-radius: 18px; /* Balanced corner radius */
     word-wrap: break-word;
     max-width: 80%;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -376,8 +519,8 @@ input[type="text"] {
     align-items: center;
     background-color: #2a2a2a;
     padding: 10px 15px;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    border-top-left-radius: 8px; /* Balanced corner radius */
+    border-top-right-radius: 8px; /* Balanced corner radius */
     border-bottom: 1px solid #333;
     margin-top: auto;
 }
@@ -427,7 +570,7 @@ input[type="text"] {
     border-left: 3px solid #00bcd4;
     padding: 8px 10px;
     margin-bottom: 8px;
-    border-radius: 8px;
+    border-radius: 8px; /* Balanced corner radius */
     font-size: 0.85em;
     opacity: 0.9;
 }
@@ -489,16 +632,34 @@ input[type="text"] {
     padding: 12px 15px;
     margin-right: 8px;
     background-color: #1e1e1e;
-    border-radius: 25px;
+    border-radius: 18px; /* Balanced corner radius */
     border: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for focus */
+}
+
+.chat-box input:focus {
+    outline: none;
+    border-color: #00bcd4; /* Highlight border on focus */
+    box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3); /* Subtle glow on focus */
 }
 
 .chat-box button {
     padding: 12px 18px;
-    border-radius: 25px;
+    border-radius: 18px; /* Balanced corner radius */
     font-size: 1.2em;
     margin: 0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease; /* Added transform for subtle press effect */
+}
+
+.chat-box button:hover {
+    background-color: #0097a7;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* More prominent shadow on hover */
+}
+
+.chat-box button:active {
+    transform: translateY(1px); /* Subtle press effect */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Reduced shadow on press */
 }
 
 /* Style for Font Awesome icons within buttons */
@@ -518,7 +679,7 @@ input[type="text"] {
     z-index: 1000;
     background-color: #2a2a2a;
     border: 1px solid #333;
-    border-radius: 10px;
+    border-radius: 8px; /* Balanced corner radius */
     padding: 8px;
     display: flex;
     flex-wrap: wrap;
@@ -534,7 +695,7 @@ input[type="text"] {
     cursor: pointer;
     padding: 5px;
     margin: 0;
-    border-radius: 5px;
+    border-radius: 5px; /* Balanced corner radius */
     transition: background-color 0.2s;
     line-height: 1;
 }
@@ -583,6 +744,74 @@ input[type="text"] {
     font-weight: bold;
 }
 
+/* Custom Modal for Confirmations (e.g., Transfer Host) */
+.custom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Ensure it's above other elements */
+}
+
+.modal-content {
+    background-color: #1e1e1e;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 350px;
+    width: 90%;
+    color: #e0e0e0;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal-button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.modal-button.confirm {
+    background-color: #00bcd4;
+    color: #fff;
+    border: none;
+}
+
+.modal-button.confirm:hover {
+    background-color: #0097a7;
+    transform: translateY(-1px);
+}
+
+.modal-button.cancel {
+    background-color: #444;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+
+.modal-button.cancel:hover {
+    background-color: #555;
+    transform: translateY(-1px);
+}
+
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
@@ -609,10 +838,13 @@ input[type="text"] {
         height: auto; /* Allow chat to take natural height */
     }
 
+    /* Removed .notifications-bar styles, so no need for this block */
+    /*
     .notifications-bar {
         flex-direction: column;
         align-items: flex-start;
     }
+    */
     .chat-message {
         max-width: 90%;
     }
