@@ -1,10 +1,10 @@
 module.exports = {
   apps : [{
-    name: "bahambin",   // Application name changed to "bahambin"
+    name: "bahambin",   // Application name
     script: "server.js",  // Main server script
     watch: true,          // Restart the app if files change
     env: {
-      PORT: process.env.PORT || 3000 // Dynamically use the PORT environment variable, fallback to 3000
+      PORT: 8443          // Set your desired port here (e.g., 8443, 3000, etc.)
     }
   }]
 }
