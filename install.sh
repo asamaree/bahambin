@@ -48,10 +48,11 @@ fi
 
 echo "🚀 Starting the server with pm2 on port $CUSTOM_PORT..."
 
-# Start the server using pm2, passing the custom port as an environment variable
-# Corrected app name to "bahambin" to match ecosystem.config.js
-pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name bahambin --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch
-pm2 set env PORT $CUSTOM_PORT bahambin # Set the PORT environment variable for the specific app
+# Start the server using pm2, directly passing the custom port as an environment variable
+# This overrides any 'env' block in ecosystem.config.js for PORT during startup
+pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name bahambin --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch -- < <(echo "export PORT=${CUSTOM_PORT}")
+# Removed the separate 'pm2 set env PORT $CUSTOM_PORT bahambin' command as it's now direct
+
 pm2 save
 
 echo "✅ All done! The BahamBin server is running on port $CUSTOM_PORT."
