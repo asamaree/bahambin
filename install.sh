@@ -38,22 +38,15 @@ else
     echo "✅ ffmpeg already installed."
 fi
 
-# Removed: Dynamic port selection
-# read -p "Enter the port you want the server to run on (default: 3000): " CUSTOM_PORT
-# if [ -z "$CUSTOM_PORT" ]; then
-#     CUSTOM_PORT=3000
-# fi
+# Removed: Dynamic port selection and CUSTOM_PORT variable
+# The port will now be entirely determined by ecosystem.config.js
 
-# Fixed port: Set the port manually here
-CUSTOM_PORT=8443 # You can change this to any desired port, e.g., 8443
+echo "🚀 Starting the server with pm2..."
 
-echo "🚀 Starting the server with pm2 on port $CUSTOM_PORT..."
-
-# Start the server using pm2, directly passing the custom port as an environment variable
-# This overrides any 'env' block in ecosystem.config.js for PORT during startup
-pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name bahambin --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch -- < <(echo "export PORT=${CUSTOM_PORT}")
+# Start the server using pm2. The port will be read from ecosystem.config.js
+pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name bahambin --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch
 
 pm2 save
 
-echo "✅ All done! The BahamBin server is running on port $CUSTOM_PORT."
-echo "🌐 Open your browser and go to http://YOUR_SERVER_IP:$CUSTOM_PORT"
+echo "✅ All done! The BahamBin server is running."
+echo "🌐 Check ecosystem.config.js or pm2 show bahambin for the exact port."
