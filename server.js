@@ -46,24 +46,38 @@ app.get('/create', (req, res) => {
 
 // Route to handle SRT upload and room creation
 app.post('/upload-and-create', upload.single('srtSubtitle'), (req, res) => {
+    console.log('POST /upload-and-create received.'); // Log when request is received
+    console.log('Request body:', req.body); // Log request body
+    console.log('Request file:', req.file); // Log uploaded file info
+
     const video = req.body.video;
     const username = req.body.username || "Guest";
     let subtitleUrl = "";
 
     if (!video) {
-        return res.send("Invalid video URL.");
+        console.error('Video URL is missing.'); // Log error
+        return res.status(400).send("Video URL is missing."); // Send 400 for bad request
     }
 
     if (req.file) {
+        console.log('SRT file detected, starting conversion...');
         const srtFilePath = req.file.path;
         const uniqueSrtName = `${nanoid(12)}.srt`;
         const uniqueVttName = `${nanoid(12)}.vtt`;
         const tempSrtPath = path.join(__dirname, 'uploads', uniqueSrtName);
         const outputVttPath = path.join(subtitlesDir, uniqueVttName);
 
-        fs.renameSync(srtFilePath, tempSrtPath);
+        try {
+            fs.renameSync(srtFilePath, tempSrtPath);
+            console.log(`Renamed temp file from ${srtFilePath} to ${tempSrtPath}`);
+        } catch (renameError) {
+            console.error(`Error renaming temp file: ${renameError}`);
+            return res.status(500).send("Server error during file processing.");
+        }
+
 
         const ffmpegCommand = `ffmpeg -i "${tempSrtPath}" -map 0:s:0 -c:s webvtt -f webvtt "${outputVttPath}"`;
+        console.log(`Executing ffmpeg command: ${ffmpegCommand}`);
 
         exec(ffmpegCommand, (error, stdout, stderr) => {
             fs.unlink(tempSrtPath, (err) => {
@@ -71,20 +85,26 @@ app.post('/upload-and-create', upload.single('srtSubtitle'), (req, res) => {
             });
 
             if (error) {
-                console.error(`exec error: ${error}`);
+                console.error(`ffmpeg exec error: ${error}`);
+                console.error(`ffmpeg stdout: ${stdout}`);
                 console.error(`ffmpeg stderr: ${stderr}`);
-                return res.status(500).send("Error converting subtitle. Please ensure ffmpeg is installed and the SRT file is valid.");
+                return res.status(500).send("Error converting subtitle. Please ensure ffmpeg is installed and the SRT file is valid. Check server logs for details.");
             }
 
-            console.log(`Subtitle converted: ${tempSrtPath} -> ${outputVttPath}`);
+            console.log(`Subtitle converted successfully: ${tempSrtPath} -> ${outputVttPath}`);
             subtitleUrl = `/subtitles/${uniqueVttName}`;
 
             const roomId = nanoid(8);
-            res.redirect(`/room/${roomId}?video=${encodeURIComponent(video)}&username=${encodeURIComponent(username)}&subtitle=${encodeURIComponent(subtitleUrl)}`);
+            const redirectUrl = `/room/${roomId}?video=${encodeURIComponent(video)}&username=${encodeURIComponent(username)}&subtitle=${encodeURIComponent(subtitleUrl)}`;
+            console.log(`Redirecting to: ${redirectUrl}`);
+            res.redirect(redirectUrl);
         });
     } else {
+        console.log('No SRT file uploaded, creating room directly.');
         const roomId = nanoid(8);
-        res.redirect(`/room/${roomId}?video=${encodeURIComponent(video)}&username=${encodeURIComponent(username)}`);
+        const redirectUrl = `/room/${roomId}?video=${encodeURIComponent(video)}&username=${encodeURIComponent(username)}`;
+        console.log(`Redirecting to: ${redirectUrl}`);
+        res.redirect(redirectUrl);
     }
 });
 
