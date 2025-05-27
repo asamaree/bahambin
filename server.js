@@ -75,11 +75,11 @@ app.post('/upload-and-create', upload.single('srtSubtitle'), (req, res) => {
             return res.status(500).send("Server error during file processing.");
         }
 
-
         const ffmpegCommand = `ffmpeg -i "${tempSrtPath}" -map 0:s:0 -c:s webvtt -f webvtt "${outputVttPath}"`;
         console.log(`Executing ffmpeg command: ${ffmpegCommand}`);
 
-        exec(ffmpegCommand, (error, stdout, stderr) => {
+        // MODIFIED: Increased maxBuffer and added timeout
+        exec(ffmpegCommand, { maxBuffer: 5 * 1024 * 1024, timeout: 60000 }, (error, stdout, stderr) => {
             fs.unlink(tempSrtPath, (err) => {
                 if (err) console.error(`Error deleting temp SRT file ${tempSrtPath}:`, err);
             });
@@ -88,9 +88,18 @@ app.post('/upload-and-create', upload.single('srtSubtitle'), (req, res) => {
                 console.error(`ffmpeg exec error: ${error}`);
                 console.error(`ffmpeg stdout: ${stdout}`);
                 console.error(`ffmpeg stderr: ${stderr}`);
-                return res.status(500).send("Error converting subtitle. Please ensure ffmpeg is installed and the SRT file is valid. Check server logs for details.");
+                let errorMessage = "Error converting subtitle.";
+                if (error.killed) {
+                    errorMessage += " FFmpeg process timed out or was killed.";
+                } else if (error.code) {
+                    errorMessage += ` FFmpeg exited with code ${error.code}.`;
+                }
+                errorMessage += " Please ensure ffmpeg is installed and the SRT file is valid. Check server logs for details.";
+                return res.status(500).send(errorMessage);
             }
 
+            console.log(`ffmpeg stdout: ${stdout}`);
+            console.log(`ffmpeg stderr: ${stderr}`);
             console.log(`Subtitle converted successfully: ${tempSrtPath} -> ${outputVttPath}`);
             subtitleUrl = `/subtitles/${uniqueVttName}`;
 
