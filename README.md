@@ -52,8 +52,8 @@ Over recent developments, BahamBin has gained significant features and UI refine
 ```bash
 sudo apt install git -y
 cd /root
-git clone https://github.com/asamaree/BahamBin.git
-cd sync-video-player
+git clone https://github.com/asamaree/bahambin.git
+cd bahambin
 bash install.sh
 ```
 
