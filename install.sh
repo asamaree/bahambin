@@ -38,20 +38,20 @@ else
     echo "✅ ffmpeg already installed."
 fi
 
-# NEW: Ask the user for the desired port
-read -p "Enter the port you want the server to run on (default: 3000): " CUSTOM_PORT
+# Removed: Dynamic port selection
+# read -p "Enter the port you want the server to run on (default: 3000): " CUSTOM_PORT
+# if [ -z "$CUSTOM_PORT" ]; then
+#     CUSTOM_PORT=3000
+# fi
 
-# Set default port if user input is empty
-if [ -z "$CUSTOM_PORT" ]; then
-    CUSTOM_PORT=3000
-fi
+# Fixed port: Set the port manually here
+CUSTOM_PORT=8443 # You can change this to any desired port, e.g., 8443
 
 echo "🚀 Starting the server with pm2 on port $CUSTOM_PORT..."
 
 # Start the server using pm2, directly passing the custom port as an environment variable
 # This overrides any 'env' block in ecosystem.config.js for PORT during startup
 pm2 start ecosystem.config.js --env production --update-env --interpreter bash --name bahambin --output /dev/null --error /dev/null --log-date-format "YYYY-MM-DD HH:mm:ss" --watch -- < <(echo "export PORT=${CUSTOM_PORT}")
-# Removed the separate 'pm2 set env PORT $CUSTOM_PORT bahambin' command as it's now direct
 
 pm2 save
 
