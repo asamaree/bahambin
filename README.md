@@ -55,7 +55,6 @@ cd /root
 git clone https://github.com/asamaree/bahambin.git
 cd bahambin
 bash install.sh
-sudo bash <(curl -Ls https://raw.githubusercontent.com/asamaree/bahambin/main/install.sh) install
 ```
 
 During `install.sh`, you’ll be asked to enter your desired port.
